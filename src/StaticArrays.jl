@@ -16,7 +16,8 @@ using LinearAlgebra
 import LinearAlgebra: transpose, adjoint, dot, eigvals, eigen, lyap, tr,
                       kron, diag, norm, dot, diagm, lu, svd, svdvals, pinv,
                       factorize, ishermitian, issymmetric, isposdef, issuccess, normalize,
-                      normalize!, Eigen, det, logdet, logabsdet, cross, diff, qr, \
+                      normalize!, Eigen, det, logdet, logabsdet, cross, diff, qr, \,
+                      triu, tril
 using LinearAlgebra: checksquare
 
 using PrecompileTools
@@ -26,7 +27,7 @@ using PrecompileTools
 # from StaticArraysCore to make transitioning definitions to StaticArraysCore easier.
 using StaticArraysCore: StaticArraysCore, StaticArray, StaticScalar, StaticVector,
                         StaticMatrix, StaticVecOrMat, tuple_length, tuple_prod,
-                        tuple_minimum, size_to_tuple, require_one_based_indexing
+                        tuple_minimum, size_to_tuple
 using StaticArraysCore: FieldArray, FieldMatrix, FieldVector
 using StaticArraysCore: StaticArrayStyle
 using StaticArraysCore: Dynamic, StaticDimension
@@ -132,6 +133,10 @@ include("deque.jl")
 include("flatten.jl")
 include("io.jl")
 include("pinv.jl")
+
+@static if VERSION >= v"1.7"
+    include("blas.jl")
+end
 
 @static if !isdefined(Base, :get_extension) # VERSION < v"1.9-"
     include("../ext/StaticArraysStatisticsExt.jl")

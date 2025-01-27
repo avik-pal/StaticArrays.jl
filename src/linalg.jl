@@ -301,7 +301,7 @@ end
         $(Expr(:meta, :inline))
         scale = maxabs_nested(a)
 
-        scale==0 && return _init_zero(a)
+        iszero(scale) && return _init_zero(a)
         p == 1 && return @inbounds scale * $expr_p1
         return @inbounds scale * ($expr)^(inv(p))
     end
@@ -328,7 +328,7 @@ end
         p == Inf && return mapreduce(norm, max, a)  # no need for scaling
 
         l = p==1 ? @inbounds($expr_p1) : @inbounds(($expr)^(inv(p)))
-        0<l<Inf && return l
+        zero(l) < l && isfinite(l) && return l
         return _norm_scaled(Size(a), a, p)  # p != 0, 2, Inf
     end
 end
@@ -522,3 +522,37 @@ end
 # Some shimming for special linear algebra matrix types
 @inline LinearAlgebra.Symmetric(A::StaticMatrix, uplo::Char='U') = (checksquare(A); Symmetric{eltype(A),typeof(A)}(A, uplo))
 @inline LinearAlgebra.Hermitian(A::StaticMatrix, uplo::Char='U') = (checksquare(A); Hermitian{eltype(A),typeof(A)}(A, uplo))
+
+# triu/tril
+function triu(S::StaticMatrix, k::Int=0)
+    if length(S) <= 32
+        C = CartesianIndices(S)
+        t = Tuple(S)
+        for (linind, CI) in enumerate(C)
+            i, j = Tuple(CI)
+            if j-i < k
+                t = Base.setindex(t, zero(t[linind]), linind)
+            end
+        end
+        similar_type(S)(t)
+    else
+        M = triu!(copyto!(similar(S), S), k)
+        similar_type(S)(M)
+    end
+end
+function tril(S::StaticMatrix, k::Int=0)
+    if length(S) <= 32
+        C = CartesianIndices(S)
+        t = Tuple(S)
+        for (linind, CI) in enumerate(C)
+            i, j = Tuple(CI)
+            if j-i > k
+                t = Base.setindex(t, zero(t[linind]), linind)
+            end
+        end
+        similar_type(S)(t)
+    else
+        M = tril!(copyto!(similar(S), S), k)
+        similar_type(S)(M)
+    end
+end
